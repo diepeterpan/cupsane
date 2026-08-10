@@ -44,7 +44,7 @@ RUN unzip master.zip
 
 WORKDIR /app
 
-COPY ricoh-sp112-ppd-master /app
+COPY ./ricoh-sp112-ppd-master /app/ricoh-sp112-ppd-master
 
 EXPOSE 631 6566 8081
 
