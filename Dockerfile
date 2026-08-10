@@ -11,6 +11,9 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repo
     hplip sane-backend-hpaio \
     nodejs npm imagemagick
 
+RUN apk add bash inotify-tools 
+RUN apk add --no-cache -X https://dl-cdn.alpinelinux.org/alpine/edge/testing jbigkit
+    
 # Copy scanservjs from official image
 COPY --from=scanservjs /usr/lib/scanservjs /app
 COPY --from=scanservjs /etc/scanservjs /etc/scanservjs
@@ -36,7 +39,12 @@ RUN mkdir -p /var/lib/scanservjs/output /var/lib/scanservjs/temp /var/lib/scanse
     printf "hpaio\n" > /etc/sane.only-hpaio/dll.conf && \
     printf "usb\n" > /etc/sane.only-hpaio/hpaio.conf
 
+RUN wget https://github.com/vaginessa/ricoh-sp112-ppd/archive/refs/heads/master.zip
+RUN unzip master.zip 
+
 WORKDIR /app
+
+COPY ricoh-sp112-ppd-master /app
 
 EXPOSE 631 6566 8081
 
