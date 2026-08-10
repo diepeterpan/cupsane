@@ -41,10 +41,9 @@ RUN mkdir -p /var/lib/scanservjs/output /var/lib/scanservjs/temp /var/lib/scanse
 
 RUN wget https://github.com/vaginessa/ricoh-sp112-ppd/archive/refs/heads/master.zip
 RUN unzip master.zip -d /tmp/extracted_files
+COPY /tmp/extracted_files/ /app/ricoh-sp112-ppd/
 
 WORKDIR /app
-
-COPY /tmp/extracted_files/ .
 
 EXPOSE 631 6566 8081
 
