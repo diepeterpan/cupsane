@@ -40,11 +40,11 @@ RUN mkdir -p /var/lib/scanservjs/output /var/lib/scanservjs/temp /var/lib/scanse
     printf "usb\n" > /etc/sane.only-hpaio/hpaio.conf
 
 RUN wget https://github.com/vaginessa/ricoh-sp112-ppd/archive/refs/heads/master.zip
-RUN unzip master.zip 
+RUN unzip master.zip -d /tmp/extracted_files
 
 WORKDIR /app
 
-COPY ./ricoh-sp112-ppd-master /app/ricoh-sp112-ppd-master
+COPY -d /tmp/extracted_files .
 
 EXPOSE 631 6566 8081
 
