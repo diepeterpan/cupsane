@@ -44,7 +44,7 @@ RUN unzip master.zip -d /tmp/extracted_files
 
 WORKDIR /app
 
-COPY -d /tmp/extracted_files .
+COPY /tmp/extracted_files/ .
 
 EXPOSE 631 6566 8081
 
