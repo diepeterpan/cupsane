@@ -1,3 +1,4 @@
+#docker build -t cupsane:latest .
 FROM sbs20/scanservjs:latest AS scanservjs
 
 FROM alpine:edge
@@ -40,10 +41,26 @@ RUN mkdir -p /var/lib/scanservjs/output /var/lib/scanservjs/temp /var/lib/scanse
     printf "usb\n" > /etc/sane.only-hpaio/hpaio.conf
 
 WORKDIR /app
-RUN wget https://github.com/vaginessa/ricoh-sp112-ppd/archive/refs/heads/master.zip
+RUN wget https://github.com/diepeterpan/Gurich/archive/refs/heads/master.zip
 RUN unzip master.zip
-RUN cp /app/ricoh-sp112-ppd-master/pstoricohddst-gdi /usr/lib/cups/filter
-RUN rm -f /app/master.zip
+
+RUN apk add --no-cache build-base
+
+# Add the testing repository
+RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+
+# Install your package normally
+RUN apk add --no-cache jbigkit-dev libusb-dev cups-dev
+
+RUN cd /app/Gurich-master && ls -ltr && make all
+RUN  ls -ltr  /app/Gurich-master/bin
+RUN  ls -ltr  /app/Gurich-master/ppd
+
+RUN cp /app/Gurich-master/bin/* /usr/lib/cups/filter/
+RUN  ls -ltr /usr/lib/cups/filter/
+
+RUN cp /app/Gurich-master/ppd/* /usr/share/ppd/
+RUN  ls -ltr /usr/share/ppd/
 
 EXPOSE 631 6566 8081
 
