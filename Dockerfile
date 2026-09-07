@@ -36,7 +36,7 @@ RUN mkdir -p /var/lib/scanservjs/output /var/lib/scanservjs/temp /var/lib/scanse
         (grep -qx 'net' /etc/sane.d/dll.conf || echo 'net' >> /etc/sane.d/dll.conf) && \
         (grep -qx 'ricoh2' /etc/sane.d/dll.conf || echo 'ricoh2' >> /etc/sane.d/dll.conf) && \
         echo 'usb' > /etc/sane.d/hpaio.conf && \
-        printf "# SANE net backend servers\n127.0.0.1\n::1\nlocalhost\n" > /etc/sane.d/net.conf && \
+        printf "# SANE net backend servers\n127.0.0.1\n::1\nlocalhost\n" > /etc/sane.d/net.conf
     # Create a minimal SANE config dir that only loads hpaio (to avoid long scans)
     #mkdir -p /etc/sane.only-hpaio && \
     #printf "hpaio\n" > /etc/sane.only-hpaio/dll.conf && \
