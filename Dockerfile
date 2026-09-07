@@ -29,16 +29,18 @@ RUN mkdir -p /var/lib/scanservjs/output /var/lib/scanservjs/temp /var/lib/scanse
         -e 's/^#\s*hpaio\s*$/hpaio/' \
         -e 's/^#\s*airscan\s*$/airscan/' \
         -e 's/^#\s*net\s*$/net/' \
+        -e 's/^#\s*ricoh2\s*$/ricoh2/' \
         /etc/sane.d/dll.conf && \
         (grep -qx 'hpaio' /etc/sane.d/dll.conf || echo 'hpaio' >> /etc/sane.d/dll.conf) && \
         (grep -qx 'airscan' /etc/sane.d/dll.conf || echo 'airscan' >> /etc/sane.d/dll.conf) && \
         (grep -qx 'net' /etc/sane.d/dll.conf || echo 'net' >> /etc/sane.d/dll.conf) && \
+        (grep -qx 'ricoh2' /etc/sane.d/dll.conf || echo 'ricoh2' >> /etc/sane.d/dll.conf) && \
         echo 'usb' > /etc/sane.d/hpaio.conf && \
         printf "# SANE net backend servers\n127.0.0.1\n::1\nlocalhost\n" > /etc/sane.d/net.conf && \
     # Create a minimal SANE config dir that only loads hpaio (to avoid long scans)
-    mkdir -p /etc/sane.only-hpaio && \
-    printf "hpaio\n" > /etc/sane.only-hpaio/dll.conf && \
-    printf "usb\n" > /etc/sane.only-hpaio/hpaio.conf
+    #mkdir -p /etc/sane.only-hpaio && \
+    #printf "hpaio\n" > /etc/sane.only-hpaio/dll.conf && \
+    #printf "usb\n" > /etc/sane.only-hpaio/hpaio.conf
 
 WORKDIR /app
 RUN wget --no-cache https://github.com/diepeterpan/Gurich/archive/refs/heads/master.zip
