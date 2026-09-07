@@ -1,23 +1,22 @@
 #docker build -t cupsane:latest .
 FROM sbs20/scanservjs:latest AS scanservjs
 
-FROM alpine:edge
+#FROM alpine:edge
 
-RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories && \
-    echo '@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories && \
-    apk update && apk --no-cache add \
-    curl cups cups-filters cups-pdf@testing ghostscript gutenprint \
-    py3-reportlab libjpeg-turbo net-snmp libusb py3-dbus python3 \
-    sane sane-backends sane-airscan \
-    hplip sane-backend-hpaio sane-backend-ricoh2 \
+#RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories && \
+#    echo '@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories && \
+RUN    apt update && apt install -y \
+    curl cups cups-filters printer-driver-cups-pdf ghostscript printer-driver-gutenprint \
+    python3-reportlab libjpeg62-turbo snmp libusb-1.0-0 python3-dbus python3 \
+    sane-utils libsane1 libsane-common sane-airscan \
     nodejs npm imagemagick
 
-RUN apk add bash inotify-tools 
-RUN apk add --no-cache -X https://dl-cdn.alpinelinux.org/alpine/edge/testing jbigkit
+RUN apt install -y bash inotify-tools wget unzip build-essential libjbig-dev libcups2-dev libusb-1.0-0-dev pkg-config xxd
+#RUN apk add --no-cache -X https://dl-cdn.alpinelinux.org/alpine/edge/testing jbigkit
     
 # Copy scanservjs from official image
-COPY --from=scanservjs /usr/lib/scanservjs /app
-COPY --from=scanservjs /etc/scanservjs /etc/scanservjs
+#COPY --from=scanservjs /usr/lib/scanservjs /app
+#COPY --from=scanservjs /etc/scanservjs /etc/scanservjs
 
 # Create scanservjs data directories with preview images
 RUN mkdir -p /var/lib/scanservjs/output /var/lib/scanservjs/temp /var/lib/scanservjs/preview && \
@@ -43,16 +42,17 @@ RUN mkdir -p /var/lib/scanservjs/output /var/lib/scanservjs/temp /var/lib/scanse
     #printf "usb\n" > /etc/sane.only-hpaio/hpaio.conf
 
 WORKDIR /app
+#RUN ls -ltr /usr/lib/scanservjs
+#RUN cp /usr/lib/scanservjs /app
 RUN wget --no-cache https://github.com/diepeterpan/Gurich/archive/refs/heads/master.zip
 RUN unzip master.zip
 
-RUN apk add --no-cache build-base
 
 # Add the testing repository
-RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+#RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 
 # Install your package normally
-RUN apk add --no-cache jbigkit-dev libusb-dev cups-dev
+#RUN apt install -y libjbig-dev libusb-1.0-0-dev libcups2-dev
 
 RUN cd /app/Gurich-master && ls -ltr && make all
 RUN  ls -ltr  /app/Gurich-master/bin
@@ -66,10 +66,11 @@ RUN  ls -ltr /usr/lib/cups/backend/gurich
 RUN cp /app/Gurich-master/ppd/* /usr/share/ppd/
 RUN ls -ltr /usr/share/ppd/
 
-RUN cp /usr/lib/sane/libsane-ricoh2.so.1.4.0  /usr/lib/sane/libsane-ricoh2.so.1.4.0.bak
-RUN xxd -p /usr/lib/sane/libsane-ricoh2.so.1.4.0.bak | tr -d '\n' \
+RUN ls -ltr /usr/lib/x86_64-linux-gnu/sane/
+RUN cp /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1 /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1.bak
+RUN xxd -p /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1.bak | tr -d '\n' \
 | sed 's/0100000000004804/0100000000004904/g; s/00003d4804/00003d4904/g' \
-| xxd -r -p > /usr/lib/sane/libsane-ricoh2.so.1.4.0
+| xxd -r -p > /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1
 
 EXPOSE 631 6566 8081
 

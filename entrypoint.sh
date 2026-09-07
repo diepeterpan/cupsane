@@ -40,10 +40,10 @@ export SANE_CONFIG_DIR=/etc/sane.net-only
 echo "[entrypoint] scanservjs will use saned via net backend" >&2
 
 # Start scanservjs in background
-if [ -d /app ]; then
-	(cd /app && node ./server/server.js &) 
+if [ -d /usr/lib/scanservjs ]; then
+	(cd /usr/lib/scanservjs && node ./server/server.js &) 
 else
-	echo "[entrypoint] /app missing; scanservjs not started" >&2
+	echo "[entrypoint] /usr/lib/scanservjs missing; scanservjs not started" >&2
 fi
 
 # Start CUPS in foreground to keep container alive
