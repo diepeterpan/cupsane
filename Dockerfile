@@ -9,7 +9,7 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repo
     curl cups cups-filters cups-pdf@testing ghostscript gutenprint \
     py3-reportlab libjpeg-turbo net-snmp libusb py3-dbus python3 \
     sane sane-backends sane-airscan \
-    hplip sane-backend-hpaio apk add sane-backend-ricoh2 \
+    hplip sane-backend-hpaio sane-backend-ricoh2 \
     nodejs npm imagemagick
 
 RUN apk add bash inotify-tools 
