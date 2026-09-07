@@ -56,8 +56,10 @@ RUN cd /app/Gurich-master && ls -ltr && make all
 RUN  ls -ltr  /app/Gurich-master/bin
 RUN  ls -ltr  /app/Gurich-master/ppd
 
-RUN cp /app/Gurich-master/bin/* /usr/lib/cups/filter/
+RUN cp /app/Gurich-master/bin/gurich /usr/lib/cups/filter/
+RUN cp /app/Gurich-master/bin/gurich_cbackend /usr/lib/cups/backend/gurich
 RUN  ls -ltr /usr/lib/cups/filter/
+RUN  ls -ltr /usr/lib/cups/backend/gurich
 
 RUN cp /app/Gurich-master/ppd/* /usr/share/ppd/
 RUN  ls -ltr /usr/share/ppd/
