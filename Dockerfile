@@ -50,7 +50,7 @@ RUN apk add --no-cache build-base
 RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 
 # Install your package normally
-RUN apk add --no-cache jbigkit-dev libusb-dev cups-dev mkdtemp
+RUN apk add --no-cache jbigkit-dev libusb-dev cups-dev
 
 RUN cd /app/Gurich-master && ls -ltr && make debug
 RUN  ls -ltr  /app/Gurich-master/bin
