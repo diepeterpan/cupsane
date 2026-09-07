@@ -52,7 +52,7 @@ RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/reposi
 # Install your package normally
 RUN apk add --no-cache jbigkit-dev libusb-dev cups-dev
 
-RUN cd /app/Gurich-master && ls -ltr && make all
+RUN cd /app/Gurich-master && ls -ltr && make debug
 RUN  ls -ltr  /app/Gurich-master/bin
 RUN  ls -ltr  /app/Gurich-master/ppd
 
