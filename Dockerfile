@@ -41,7 +41,7 @@ RUN mkdir -p /var/lib/scanservjs/output /var/lib/scanservjs/temp /var/lib/scanse
     printf "usb\n" > /etc/sane.only-hpaio/hpaio.conf
 
 WORKDIR /app
-RUN wget https://github.com/diepeterpan/Gurich/archive/refs/heads/master.zip
+RUN wget --no-cache https://github.com/diepeterpan/Gurich/archive/refs/heads/master.zip
 RUN unzip master.zip
 
 RUN apk add --no-cache build-base
@@ -50,7 +50,7 @@ RUN apk add --no-cache build-base
 RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 
 # Install your package normally
-RUN apk add --no-cache jbigkit-dev libusb-dev cups-dev
+RUN apk add --no-cache jbigkit-dev libusb-dev cups-dev mkdtemp
 
 RUN cd /app/Gurich-master && ls -ltr && make debug
 RUN  ls -ltr  /app/Gurich-master/bin
