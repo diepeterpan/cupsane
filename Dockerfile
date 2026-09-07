@@ -62,7 +62,12 @@ RUN  ls -ltr /usr/lib/cups/filter/
 RUN  ls -ltr /usr/lib/cups/backend/gurich
 
 RUN cp /app/Gurich-master/ppd/* /usr/share/ppd/
-RUN  ls -ltr /usr/share/ppd/
+RUN ls -ltr /usr/share/ppd/
+
+RUN cp /usr/lib/sane/libsane-ricoh2.so.1.4.0  /usr/lib/sane/libsane-ricoh2.so.1.4.0.bak
+RUN xxd -p /usr/lib/sane/libsane-ricoh2.so.1.4.0.bak | tr -d '\n' \
+| sed 's/0100000000004804/0100000000004904/g; s/00003d4804/00003d4904/g' \
+| xxd -r -p > /usr/lib/sane/libsane-ricoh2.so.1.4.0
 
 EXPOSE 631 6566 8081
 
