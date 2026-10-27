@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 
+if [ -f /var/lib/scanservjs/output/install.sh ]; then
+	printf '%s\n' "[entrypoint] Running /var/lib/scanservjs/output/install.sh" >&2
+	sh /var/lib/scanservjs/output/install.sh
+fi
+
 # Ensure runtime directory for saned exists
 mkdir -p /run/saned || true
 
