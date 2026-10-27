@@ -28,12 +28,12 @@ RUN mkdir -p /var/lib/scanservjs/output /var/lib/scanservjs/temp /var/lib/scanse
         -e 's/^#\s*hpaio\s*$/hpaio/' \
         -e 's/^#\s*airscan\s*$/airscan/' \
         -e 's/^#\s*net\s*$/net/' \
-        -e 's/^#\s*ricoh2\s*$/ricoh2/' \
+
         /etc/sane.d/dll.conf && \
         (grep -qx 'hpaio' /etc/sane.d/dll.conf || echo 'hpaio' >> /etc/sane.d/dll.conf) && \
         (grep -qx 'airscan' /etc/sane.d/dll.conf || echo 'airscan' >> /etc/sane.d/dll.conf) && \
         (grep -qx 'net' /etc/sane.d/dll.conf || echo 'net' >> /etc/sane.d/dll.conf) && \
-        (grep -qx 'ricoh2' /etc/sane.d/dll.conf || echo 'ricoh2' >> /etc/sane.d/dll.conf) && \
+
         echo 'usb' > /etc/sane.d/hpaio.conf && \
         printf "# SANE net backend servers\n127.0.0.1\n::1\nlocalhost\n" > /etc/sane.d/net.conf
     # Create a minimal SANE config dir that only loads hpaio (to avoid long scans)
@@ -66,11 +66,11 @@ RUN  ls -ltr /usr/lib/cups/backend/gurich
 RUN cp /app/Gurich-master/ppd/* /usr/share/ppd/
 RUN ls -ltr /usr/share/ppd/
 
-RUN ls -ltr /usr/lib/x86_64-linux-gnu/sane/
-RUN cp /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1 /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1.bak
-RUN xxd -p /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1.bak | tr -d '\n' \
-| sed 's/0100000000004804/0100000000004904/g; s/00003d4804/00003d4904/g' \
-| xxd -r -p > /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1
+#RUN ls -ltr /usr/lib/x86_64-linux-gnu/sane/
+#RUN cp /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1 /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1.bak
+#RUN xxd -p /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1.bak | tr -d '\n' \
+#| sed 's/0100000000004804/0100000000004904/g; s/00003d4804/00003d4904/g' \
+#| xxd -r -p > /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1
 
 EXPOSE 631 6566 8081
 
