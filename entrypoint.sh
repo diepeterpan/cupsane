@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e
 
-if [ -f /var/lib/scanservjs/output/install.sh ]; then
-	printf '%s\n' "[entrypoint] Running /var/lib/scanservjs/output/install.sh" >&2
-	cd /var/lib/scanservjs/output/
+if [ -f /driver/install.sh ]; then
+	printf '%s\n' "[entrypoint] Running /driver/install.sh" >&2
+	cd /driver/
 	sh install.sh
 fi
 
