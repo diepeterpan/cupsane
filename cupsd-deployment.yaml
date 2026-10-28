@@ -22,6 +22,9 @@ spec:
           securityContext:
             privileged: true
             allowPrivilegeEscalation: true
+          env:
+            - name: MDNS_ANNOUNCE
+              value: "false"
           ports:
             - containerPort: 631
               hostPort: 8631

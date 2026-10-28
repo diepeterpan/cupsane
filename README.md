@@ -29,6 +29,9 @@ AirSane publishes scanners with mDNS. The Docker Compose configuration uses host
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `TZ` | — | Timezone (e.g., `Europe/Warsaw`) |
+| `MDNS_ANNOUNCE` | `true` | Set to `false` to disable AirSane's mDNS service announcement; the web UI remains available at port 8090, but automatic AirScan discovery is disabled. |
+
+The supplied Docker Compose and Kubernetes configurations set `MDNS_ANNOUNCE=false`. To enable mDNS announcements for AirScan discovery, change the value to `true` or remove the variable.
 
 ## Deployment methods
 
@@ -41,6 +44,7 @@ docker run --rm -d \
   --name cupsane \
   --network host \
   --privileged \
+  -e MDNS_ANNOUNCE=false \
   -v /var/run/dbus:/var/run/dbus \
   -v /dev/bus/usb:/dev/bus/usb \
   bartekmp/cupsane:latest

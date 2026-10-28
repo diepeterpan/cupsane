@@ -13,3 +13,4 @@ services:
       - ./storage/cups-spool:/var/spool/cups
     environment:
       - TZ=Europe/Warsaw
+      - MDNS_ANNOUNCE=false
