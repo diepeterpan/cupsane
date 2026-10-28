@@ -31,18 +31,6 @@ if [ -n "${SANED_ACL}" ]; then
     printf '%s\n' "${SANED_ACL}" >> /etc/sane.d/saned.conf
 fi
 
-SANED_PORT="${SANED_PORT:-6566}"
-if command -v /usr/sbin/saned >/dev/null 2>&1; then
-	echo "[entrypoint] Starting saned on port $SANED_PORT" >&2
-	/usr/sbin/saned -l -p "${SANED_PORT}" -D &
-	# Give saned a moment to start and claim the device
-	/etc/sane.d/saned.conf
-	
-	sleep 1
-else
-	echo "[entrypoint] WARNING: saned not found at /usr/sbin/saned" >&2
-fi
-
 # Start saned to handle USB scanner access
 # scanservjs will connect via net backend to avoid "Device busy" conflicts
 SANED_PORT="${SANED_PORT:-6566}"
