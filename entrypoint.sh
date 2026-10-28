@@ -31,7 +31,7 @@ echo "[entrypoint] Starting Avahi for AirScan discovery" >&2
 /usr/sbin/avahi-daemon --daemonize
 
 echo "[entrypoint] Starting AirSane on port 8090" >&2
-su -s /bin/sh -c 'exec /usr/local/bin/airsaned --listen-port=8090 --mdns-announce=true' saned &
+su -s /bin/sh -c 'exec /usr/local/bin/airsaned --listen-port=8090 --mdns-announce=true --access-log=- --debug=true' saned &
 airsane_pid=$!
 sleep 1
 if ! kill -0 "$airsane_pid" 2>/dev/null; then
