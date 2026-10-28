@@ -36,7 +36,7 @@ fi
 SANED_PORT="${SANED_PORT:-6566}"
 if command -v /usr/sbin/saned >/dev/null 2>&1; then
 	echo "[entrypoint] Starting saned on port $SANED_PORT" >&2
-	/usr/sbin/saned -l -p "${SANED_PORT}" -D &
+	/usr/sbin/saned -a -l -p "${SANED_PORT}" -D &
 	# Give saned a moment to start and claim the device
 	sleep 1
 else
