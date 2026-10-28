@@ -11,7 +11,5 @@ services:
       - ./storage/cups-config:/etc/cups
       - ./storage/cups-cache:/var/cache/cups
       - ./storage/cups-spool:/var/spool/cups
-      - ./storage/scans:/var/lib/scanservjs/output
     environment:
       - TZ=Europe/Warsaw
-      - SANE_FORCE_HPAIO_ONLY=1

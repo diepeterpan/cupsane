@@ -1,93 +1,45 @@
-#docker build -t cupsane:latest .
-FROM sbs20/scanservjs:latest AS scanservjs
+# docker build -t cupsane:latest .
+FROM debian:bookworm-slim
 
-#FROM alpine:edge
-
-#RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories && \
-#    echo '@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories && \
-RUN    apt update && apt install -y \
-    curl cups cups-filters printer-driver-cups-pdf ghostscript printer-driver-gutenprint \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    ca-certificates curl cups cups-filters printer-driver-cups-pdf printer-driver-hpcups hplip ghostscript printer-driver-gutenprint \
     python3-reportlab libjpeg62-turbo snmp libusb-1.0-0 python3-dbus python3 \
-    sane-utils libsane1 libsane-common sane-airscan \
-    nodejs npm imagemagick
+    sane-utils libsane1 libsane-common libsane-hpaio sane-airscan avahi-daemon \
+    bash inotify-tools wget unzip build-essential cmake git g++ \
+    libjbig-dev libcups2-dev libusb-1.0-0-dev pkg-config xxd \
+    libsane-dev libjpeg-dev libpng-dev libavahi-client-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt install -y bash inotify-tools wget unzip build-essential libjbig-dev libcups2-dev libusb-1.0-0-dev pkg-config xxd
-#RUN apk add --no-cache -X https://dl-cdn.alpinelinux.org/alpine/edge/testing jbigkit
-    
-# Copy scanservjs from official image
-#COPY --from=scanservjs /usr/lib/scanservjs /app
-#COPY --from=scanservjs /etc/scanservjs /etc/scanservjs
+RUN git clone --depth 1 https://github.com/SimulPiscator/AirSane.git /tmp/AirSane && \
+    cmake -S /tmp/AirSane -B /tmp/AirSane-build -DCMAKE_BUILD_TYPE=Release && \
+    cmake --build /tmp/AirSane-build --parallel && \
+    cmake --install /tmp/AirSane-build && \
+    rm -f /lib/systemd/system/airsaned.service && \
+    rm -rf /tmp/AirSane /tmp/AirSane-build
 
-# Create scanservjs data directories with preview images
-RUN mkdir -p /var/lib/scanservjs/output /var/lib/scanservjs/temp /var/lib/scanservjs/preview && \
-    chmod 777 /var/lib/scanservjs/output /var/lib/scanservjs/temp /var/lib/scanservjs/preview && \
-    mkdir -p /run/saned && \
-    magick -size 64x64 xc:white /var/lib/scanservjs/preview/default.jpg && \
-    # Ensure essential SANE backends are enabled
-    sed -i \
-        -e 's/^#\s*hpaio\s*$/hpaio/' \
-        -e 's/^#\s*airscan\s*$/airscan/' \
-        -e 's/^#\s*net\s*$/net/' \
-
-        /etc/sane.d/dll.conf && \
-        (grep -qx 'hpaio' /etc/sane.d/dll.conf || echo 'hpaio' >> /etc/sane.d/dll.conf) && \
-        (grep -qx 'airscan' /etc/sane.d/dll.conf || echo 'airscan' >> /etc/sane.d/dll.conf) && \
-        (grep -qx 'net' /etc/sane.d/dll.conf || echo 'net' >> /etc/sane.d/dll.conf) && \
-
-        echo 'usb' > /etc/sane.d/hpaio.conf && \
-        printf "# SANE net backend servers\n127.0.0.1\n::1\nlocalhost\n" > /etc/sane.d/net.conf
-    # Create a minimal SANE config dir that only loads hpaio (to avoid long scans)
-    #mkdir -p /etc/sane.only-hpaio && \
-    #printf "hpaio\n" > /etc/sane.only-hpaio/dll.conf && \
-    #printf "usb\n" > /etc/sane.only-hpaio/hpaio.conf
+RUN sed -i '/^\[server\]/a enable-dbus=no' /etc/avahi/avahi-daemon.conf && \
+    usermod -aG scanner,lp,avahi saned && \
+    sed -i '/^[[:space:]]*hpaio[[:space:]]*$/d; /^[[:space:]]*airscan[[:space:]]*$/d' /etc/sane.d/dll.conf && \
+    printf '\nhpaio\nairscan\n' >> /etc/sane.d/dll.conf && \
+    printf 'usb\n' > /etc/sane.d/hpaio.conf
 
 WORKDIR /app
-#RUN ls -ltr /usr/lib/scanservjs
-#RUN cp /usr/lib/scanservjs /app
-RUN wget --no-cache https://github.com/diepeterpan/Gurich/archive/refs/heads/master.zip
-RUN unzip master.zip
+RUN wget --no-cache https://github.com/diepeterpan/Gurich/archive/refs/heads/master.zip && \
+    unzip master.zip && \
+    cd /app/Gurich-master && make all && \
+    cp bin/gurich /usr/lib/cups/filter/ && \
+    cp bin/gurich_cbackend /usr/lib/cups/backend/gurich && \
+    cp ppd/* /usr/share/ppd/ && \
+    rm -rf /app/Gurich-master /app/master.zip
 
-
-# Add the testing repository
-#RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
-
-# Install your package normally
-#RUN apt install -y libjbig-dev libusb-1.0-0-dev libcups2-dev
-
-RUN cd /app/Gurich-master && ls -ltr && make all
-RUN  ls -ltr  /app/Gurich-master/bin
-RUN  ls -ltr  /app/Gurich-master/ppd
-
-RUN cp /app/Gurich-master/bin/gurich /usr/lib/cups/filter/
-RUN cp /app/Gurich-master/bin/gurich_cbackend /usr/lib/cups/backend/gurich
-RUN  ls -ltr /usr/lib/cups/filter/
-RUN  ls -ltr /usr/lib/cups/backend/gurich
-
-RUN cp /app/Gurich-master/ppd/* /usr/share/ppd/
-RUN ls -ltr /usr/share/ppd/
-
-#RUN ls -ltr /usr/lib/x86_64-linux-gnu/sane/
-#RUN cp /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1 /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1.bak
-#RUN xxd -p /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1.bak | tr -d '\n' \
-#| sed 's/0100000000004804/0100000000004904/g; s/00003d4804/00003d4904/g' \
-#| xxd -r -p > /usr/lib/x86_64-linux-gnu/sane/libsane-ricoh2.so.1.2.1
-
-EXPOSE 631 6566 8081
+EXPOSE 631 8090
 
 COPY --chown=root:lp config/cupsd.conf /etc/cups/cupsd.conf
-COPY config/saned.conf /etc/sane.d/saned.conf
 
-# Override scanservjs to listen on port 8081
-COPY config/scanservjs.local.json /etc/scanservjs/local.json
-COPY config/scanservjs.config.js /etc/scanservjs/config.local.js
-
-# Keep default copies to seed mounted volumes at runtime
 RUN mkdir -p /opt/defaults && \
-    cp /etc/cups/cupsd.conf /opt/defaults/cupsd.conf && \
-    cp /etc/sane.d/saned.conf /opt/defaults/saned.conf
+    cp /etc/cups/cupsd.conf /opt/defaults/cupsd.conf
 
 COPY entrypoint.sh /entrypoint.sh
-
 RUN chmod +x /entrypoint.sh
 
 CMD ["/entrypoint.sh"]

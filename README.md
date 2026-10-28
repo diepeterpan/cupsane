@@ -4,63 +4,55 @@
 [![GitHub Container Registry](https://img.shields.io/badge/ghcr.io-bartekmp%2Fcupsane-blue?logo=github)](https://ghcr.io/bartekmp/cupsane)
 [![Build](https://github.com/bartekmp/cupsane/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/bartekmp/cupsane/actions/workflows/build-and-push.yml)
 
-A containerized CUPS print server with SANE scanner support and web-based scanning interface (scanservjs), designed for network printing and scanning with HP printers/scanners.
+A containerized CUPS print server with SANE scanner support and AirSane, an AirScan/eSCL scanner server with a simple web interface.
 
 ## Features
 
 - **CUPS** - Network print server with web interface
-- **SANE** - Scanner backend with network support
-- **scanservjs** - Web-based scanning interface
-- **HP printer/scanner support** via HPLIP
-- **Persistent configuration** - Printer and scanner settings survive container restarts
-- **Network accessible** - All services available on your LAN
+- **AirSane** - AirScan/eSCL scanner server, mDNS discovery, and a simple web interface
+- **SANE** - Scanner backends, including HP devices
+- **Persistent configuration** - Printer settings survive container restarts
+- **Network accessible** - Printing and scanning are available on the LAN
 
-## Services & Ports
+## Services and ports
 
-- **8631** - CUPS web interface (IPP printing)
-- **6566** - SANE network scanner daemon (for external SANE clients)
-- **8632** - scanservjs web scanner interface (container listens on 8081)
+- **631** - CUPS web interface and IPP printing inside the container
+- **8631** - CUPS port in the Kubernetes deployment and bridged Docker example
+- **8090** - AirSane web interface and AirScan/eSCL service
 
-## Architecture
+The separate SANE network daemon (`saned`) is not started; scanner clients connect through AirSane instead.
 
-The container runs three services:
-- **saned** — owns the USB scanner, exposes it over the network
-- **scanservjs** — web UI that connects to saned via SANE net backend
-- **cupsd** — print server
+AirSane publishes scanners with mDNS. The Docker Compose configuration uses host networking so AirScan clients on the LAN can discover the service. In Kubernetes, discovery requires a network that permits mDNS multicast and makes the advertised pod address reachable from scanner clients; many default Kubernetes networks do not. The web interface remains available at the configured node port even when mDNS discovery is unavailable.
 
-This architecture avoids "Device busy" conflicts by having a single process (saned) access the USB device.
-
-## Environment Variables
+## Environment variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SANE_FORCE_HPAIO_ONLY` | `1` | Use minimal SANE config (hpaio only) for fast scanner detection |
-| `SANED_PORT` | `6566` | Port for saned network scanner daemon |
 | `TZ` | — | Timezone (e.g., `Europe/Warsaw`) |
 
-## Deployment Methods
+## Deployment methods
 
 ### 1. Docker Run
 
-#### Quick Start (no persistence)
+For AirScan discovery on a Linux host, use host networking:
+
 ```bash
 docker run --rm -d \
   --name cupsane \
+  --network host \
   --privileged \
   -v /var/run/dbus:/var/run/dbus \
   -v /dev/bus/usb:/dev/bus/usb \
-  -p 8631:631 \
-  -p 6566:6566 \
-  -p 8632:8081 \
   bartekmp/cupsane:latest
 ```
 
-#### With Persistence
-```bash
-# Create data directories
-mkdir -p ./storage/cups-config ./storage/cups-cache ./storage/cups-spool ./storage/scans
+With host networking, CUPS is available on port 631 and AirSane on port 8090.
 
-# Run container
+For bridged networking with explicit CUPS configuration persistence:
+
+```bash
+mkdir -p ./storage/cups-config ./storage/cups-cache ./storage/cups-spool
+
 docker run --rm -d \
   --name cupsane \
   --privileged \
@@ -69,143 +61,111 @@ docker run --rm -d \
   -v ./storage/cups-config:/etc/cups \
   -v ./storage/cups-cache:/var/cache/cups \
   -v ./storage/cups-spool:/var/spool/cups \
-  -v ./storage/scans:/var/lib/scanservjs/output \
   -e TZ=Europe/Warsaw \
   -p 8631:631 \
-  -p 6566:6566 \
-  -p 8632:8081 \
+  -p 8090:8090 \
   bartekmp/cupsane:latest
 ```
 
+Port mapping makes the web interface reachable, but Docker bridge networking does not generally forward AirSane's mDNS announcements. Use host networking or configure an mDNS relay if LAN scanner discovery is required.
+
 ### 2. Docker Compose
 
-Perfect for TrueNAS SCALE and other Docker environments.
+The supplied Compose file is intended for Linux hosts and uses host networking for scanner access and mDNS discovery.
 
 ```bash
-# Create project directory
 mkdir cupsane && cd cupsane
-
 # Copy docker-compose.yml to this directory
-
-# Create data directories
-mkdir -p cups-config cups-cache cups-spool scans
-
-# Start services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
+mkdir -p storage/cups-config storage/cups-cache storage/cups-spool
+docker compose up -d
+docker compose logs -f
 ```
+
+The Compose service binds directly to the host network. AirSane is at `http://<host-ip>:8090`; CUPS listens on port 631.
 
 ### 3. Kubernetes (k3s/k8s)
 
 #### Prerequisites
+
 ```bash
-# Create persistent storage directories on the workstation node
 sudo mkdir -p /opt/cupsd-data/{config,cache,spool}
 sudo chmod 755 /opt/cupsd-data/{config,cache,spool}
 ```
 
 #### Deploy
-```bash
-# Apply the deployment
-kubectl apply -f cupsd-deployment.yaml
 
-# Check status
+```bash
+kubectl apply -f cupsd-deployment.yaml
 kubectl get pods -l app=cupsane
 kubectl logs -f deployment/cupsane
-
-# Access services (replace <node-ip> with your workstation IP)
-# CUPS: http://<node-ip>:8631
-# Scanner web: http://<node-ip>:8632
 ```
 
-#### Node Selector
-The deployment includes a node selector to pin the pod to the `workstation` node where the USB printer is connected. Modify `nodeSelector` in `cupsd-deployment.yaml` if your node has a different hostname.
+Access CUPS at `http://<node-ip>:8631` and AirSane at `http://<node-ip>:8090`.
+
+The deployment pins the pod to the `workstation` node, where the USB scanner is expected to be connected. Change `nodeSelector` in `cupsd-deployment.yaml` if needed. AirScan discovery from outside the cluster also depends on the cluster network forwarding mDNS multicast and making the pod's advertised address reachable; use a multicast-capable network or mDNS relay if required.
 
 ## Configuration
 
-### CUPS Web Interface
-Access at `http://<your-ip>:8631`
+### CUPS
+
+Access CUPS at `http://<your-ip>:631` when using host networking, or at the mapped port such as `http://<your-ip>:8631` when using bridged networking.
 
 - Add printers via the web interface
 - Configure print queues and sharing
 - Monitor print jobs
 
-### Scanner Web Interface
-Access at `http://<your-ip>:8632`
+The default server configuration allows access from the LAN. To modify network access, edit `config/cupsd.conf` and rebuild the image.
 
-- Web-based scanning interface
-- Preview and adjust scan settings
-- Save scans as PDF, PNG, JPG, or TIF
-- Download scans directly from browser
+### AirSane
 
-### Network Configuration
-The CUPS server is configured to allow access from:
-- `192.168.0.0/24` (IPv4)
-- `fd21:37::/64` (IPv6)
+Access the simple web interface at `http://<your-ip>:8090`. AirSane also publishes compatible scanners over AirScan/eSCL for clients such as Apple Image Capture, Windows scanner software, and Mopria Scan.
 
-To modify network access, edit `cupsd.conf` and rebuild the image.
+Scans are delivered to the requesting client. AirSane does not archive scans in the container, so there is no scan-output volume. Existing files in a previously configured host-side scan directory are not modified by this image.
 
-## Persistent Data
+## Persistent data
 
-The following directories are persisted:
+Persist these CUPS directories as needed:
+
 - `/etc/cups` - CUPS configuration and printer definitions
 - `/var/cache/cups` - CUPS cache files
 - `/var/spool/cups` - Print job queue
-- `/var/lib/scanservjs/output` - Scanned documents
 
 ## Troubleshooting
 
-### Check if printer is detected
-```bash
-# Docker
-docker exec cupsane scanimage -L
+### Check scanner detection
 
-# Kubernetes
-kubectl exec deployment/cupsane -- scanimage -L
+AirSane runs as the `saned` account. Check that the SANE backends can see devices as that user:
+
+```bash
+docker exec cupsane su -s /bin/sh -c 'scanimage -L' saned
 ```
 
 ### View logs
+
 ```bash
-# Docker
 docker logs cupsane
-
-# Docker Compose
-docker-compose logs -f
-
-# Kubernetes
+docker compose logs -f
 kubectl logs deployment/cupsane
 ```
 
 ### Restart services
+
 ```bash
-# Docker
 docker restart cupsane
-
-# Docker Compose
-docker-compose restart
-
-# Kubernetes
+docker compose restart
 kubectl rollout restart deployment/cupsane
 ```
 
-## Building from Source
+## Building from source
 
 ```bash
-# Build image
 docker build -t cupsane .
+docker run --rm --privileged -p 8631:631 -p 8090:8090 cupsane
+```
 
-# Test locally
-docker run --rm --privileged -p 8631:631 -p 8632:8081 cupsane
+For AirScan discovery on a Linux host, run the image with `--network host` instead of port mappings. To publish an updated image:
 
-# Note: to avoid slow scanner discovery, the image uses an hpaio-only SANE config by default.
-# You can disable this with: -e SANE_FORCE_HPAIO_ONLY=0
-
-# Push to registry
+```bash
 docker tag cupsane bartekmp/cupsane:latest
 docker push bartekmp/cupsane:latest
 ```
@@ -213,17 +173,20 @@ docker push bartekmp/cupsane:latest
 ## Requirements
 
 - USB printer/scanner connected to the host
-- Privileged container access (for USB device access)
-- D-Bus support on host system
+- Privileged container access for USB device access
+- D-Bus support on the host for HPLIP devices
+- Host networking or mDNS multicast support for AirScan scanner discovery
 
-## Supported Printers
+## Supported devices
 
 Primarily designed for HP printers/scanners via HPLIP, but also supports:
+
 - Generic PostScript printers
 - PDF printing (cups-pdf)
 - Network printers via IPP
-- AirScan-compatible scanners
+
+Scanner availability depends on the SANE backends enabled in the image.
 
 ## License
 
-See LICENSE file for details.
+See LICENSE for details.

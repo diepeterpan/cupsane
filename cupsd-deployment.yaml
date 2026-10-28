@@ -22,19 +22,13 @@ spec:
           securityContext:
             privileged: true
             allowPrivilegeEscalation: true
-          env:
-            - name: SANE_FORCE_HPAIO_ONLY
-              value: "1"
           ports:
             - containerPort: 631
               hostPort: 8631
               name: ipp
-            - containerPort: 6566
-              hostPort: 6566
-              name: saned
-            - containerPort: 8081
-              hostPort: 8632
-              name: scanweb
+            - containerPort: 8090
+              hostPort: 8090
+              name: airsane
           volumeMounts:
             - name: dbus-run
               mountPath: /var/run/dbus
@@ -47,15 +41,19 @@ spec:
             - name: cups-spool
               mountPath: /var/spool/cups
           readinessProbe:
-            httpGet:
-              path: /
-              port: 631
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - curl -fsS http://127.0.0.1:631/ >/dev/null && curl -fsS http://127.0.0.1:8090/ >/dev/null
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /
-              port: 631
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - curl -fsS http://127.0.0.1:631/ >/dev/null && curl -fsS http://127.0.0.1:8090/ >/dev/null
             initialDelaySeconds: 30
             periodSeconds: 30
           resources:
@@ -95,6 +93,6 @@ spec:
     - name: ipp
       port: 8631
       targetPort: 631
-    - name: scanweb
-      port: 8632
-      targetPort: 8081
+    - name: airsane
+      port: 8090
+      targetPort: 8090
