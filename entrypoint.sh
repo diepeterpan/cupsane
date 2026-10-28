@@ -26,9 +26,9 @@ if [ "${SANE_FORCE_HPAIO_ONLY:-1}" = "1" ] && [ -d /etc/sane.only-hpaio ]; then
 	echo "[entrypoint] saned using minimal SANE config at $SANE_CONFIG_DIR (hpaio only)" >&2
 fi
 
-if [ -n "$SANED_ACL" ]; then
-    echo "[entrypoint] Adding $SANED_ACL to /etc/sane.d/saned.conf" >&2
-    printf '%s\n' "$SANED_ACL" >> /etc/sane.d/saned.conf
+if [ -n "${SANED_ACL}" ]; then
+    echo "[entrypoint] Adding ${SANED_ACL} to /etc/sane.d/saned.conf" >&2
+    printf '%s\n' "${SANED_ACL}" >> /etc/sane.d/saned.conf
 fi
 
 SANED_PORT="${SANED_PORT:-6566}"
