@@ -30,8 +30,11 @@ AirSane publishes scanners with mDNS. The Docker Compose configuration uses host
 |----------|---------|-------------|
 | `TZ` | — | Timezone (e.g., `Europe/Warsaw`) |
 | `MDNS_ANNOUNCE` | `true` | Set to `false` to disable AirSane's mDNS service announcement; the web UI remains available at port 8090, but automatic AirScan discovery is disabled. |
+| `AIRSANE_DEBUG` | `true` | Set to `false` to disable AirSane debug logging. |
+| `AIRSANE_LISTEN_PORT` | `8090` | TCP port AirSane listens on (valid range: 1–65535). |
 
 The supplied Docker Compose and Kubernetes configurations set `MDNS_ANNOUNCE=false`. To enable mDNS announcements for AirScan discovery, change the value to `true` or remove the variable.
+For Docker Compose, set `AIRSANE_DEBUG` or `AIRSANE_LISTEN_PORT` in the shell or a `.env` file. When changing the listen port in a deployment with explicit port mappings, update those mappings to match.
 
 ## Deployment methods
 
@@ -75,7 +78,7 @@ Port mapping makes the web interface reachable, but Docker bridge networking doe
 
 ### 2. Docker Compose
 
-The supplied Compose file is intended for Linux hosts and uses host networking for scanner access and mDNS discovery.
+The supplied Compose file is intended for Linux hosts and uses host networking for scanner access and mDNS discovery. The container watches the mounted `/dev/bus/usb` tree for newly created USB device nodes and restarts AirSane after an attachment; CUPS stays running. This relies on Linux USB device nodes being bind-mounted into the container. Detaching a device does not trigger a restart.
 
 ```bash
 mkdir cupsane && cd cupsane

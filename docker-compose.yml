@@ -14,3 +14,5 @@ services:
     environment:
       - TZ=Europe/Warsaw
       - MDNS_ANNOUNCE=false
+      - AIRSANE_DEBUG=${AIRSANE_DEBUG:-true}
+      - AIRSANE_LISTEN_PORT=${AIRSANE_LISTEN_PORT:-8090}

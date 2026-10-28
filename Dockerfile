@@ -40,6 +40,7 @@ RUN mkdir -p /opt/defaults && \
     cp /etc/cups/cupsd.conf /opt/defaults/cupsd.conf
 
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY airsane-supervisor.sh /usr/local/bin/airsane-supervisor.sh
+RUN chmod +x /entrypoint.sh /usr/local/bin/airsane-supervisor.sh
 
 CMD ["/entrypoint.sh"]

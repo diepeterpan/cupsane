@@ -35,6 +35,27 @@ case "$mdns_announce" in
 		;;
 esac
 
+airsane_debug="${AIRSANE_DEBUG:-true}"
+case "$airsane_debug" in
+	true|false) ;;
+	*)
+		echo "[entrypoint] AIRSANE_DEBUG must be 'true' or 'false'" >&2
+		exit 1
+		;;
+esac
+
+airsane_listen_port="${AIRSANE_LISTEN_PORT:-8090}"
+case "$airsane_listen_port" in
+	''|*[!0-9]*)
+		echo "[entrypoint] AIRSANE_LISTEN_PORT must be an integer from 1 to 65535" >&2
+		exit 1
+		;;
+esac
+if [ "${#airsane_listen_port}" -gt 5 ] || [ "$airsane_listen_port" -lt 1 ] || [ "$airsane_listen_port" -gt 65535 ]; then
+	echo "[entrypoint] AIRSANE_LISTEN_PORT must be an integer from 1 to 65535" >&2
+	exit 1
+fi
+
 mkdir -p /etc/default
 touch /etc/default/airsane
 if grep -q '^MDNS_ANNOUNCE=' /etc/default/airsane; then
@@ -51,12 +72,29 @@ else
 	echo "[entrypoint] AirSane mDNS announcements disabled" >&2
 fi
 
-echo "[entrypoint] Starting AirSane on port 8090 (MDNS_ANNOUNCE=$mdns_announce)" >&2
-su -s /bin/sh -c "exec /usr/local/bin/airsaned --listen-port=8090 --mdns-announce=$mdns_announce --access-log=- --debug=true" saned &
-airsane_pid=$!
-sleep 1
-if ! kill -0 "$airsane_pid" 2>/dev/null; then
-	echo "[entrypoint] AirSane failed to start" >&2
+echo "[entrypoint] Starting AirSane on port $airsane_listen_port (MDNS_ANNOUNCE=$mdns_announce, AIRSANE_DEBUG=$airsane_debug)" >&2
+
+airsane_ready_file=/run/airsane-supervisor.ready
+rm -f "$airsane_ready_file"
+MDNS_ANNOUNCE="$mdns_announce" \
+	AIRSANE_DEBUG="$airsane_debug" \
+	AIRSANE_LISTEN_PORT="$airsane_listen_port" \
+	/usr/local/bin/airsane-supervisor.sh "$airsane_ready_file" &
+airsane_supervisor_pid=$!
+attempt=0
+while [ ! -f "$airsane_ready_file" ] && [ "$attempt" -lt 10 ]; do
+	if ! kill -0 "$airsane_supervisor_pid" 2>/dev/null; then
+		wait "$airsane_supervisor_pid" || true
+		echo "[entrypoint] AirSane supervisor failed to start" >&2
+		exit 1
+	fi
+	sleep 1
+	attempt=$((attempt + 1))
+done
+if [ ! -f "$airsane_ready_file" ]; then
+	kill -TERM "$airsane_supervisor_pid" 2>/dev/null || true
+	wait "$airsane_supervisor_pid" || true
+	echo "[entrypoint] Timed out waiting for AirSane to start" >&2
 	exit 1
 fi
 
