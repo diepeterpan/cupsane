@@ -44,6 +44,15 @@ case "$airsane_debug" in
 		;;
 esac
 
+announce_secure="${ANNOUNCE_SECURE:-false}"
+case "$announce_secure" in
+true|false) ;;
+*)
+	echo "[entrypoint] ANNOUNCE_SECURE must be 'true' or 'false'" >&2
+	exit 1
+	;;
+esac
+
 airsane_listen_port="${AIRSANE_LISTEN_PORT:-8090}"
 case "$airsane_listen_port" in
 	''|*[!0-9]*)
@@ -79,6 +88,8 @@ rm -f "$airsane_ready_file"
 MDNS_ANNOUNCE="$mdns_announce" \
 	AIRSANE_DEBUG="$airsane_debug" \
 	AIRSANE_LISTEN_PORT="$airsane_listen_port" \
+	ANNOUNCE_SECURE="$announce_secure" \
+	ANNOUNCE_BASE_URL="${ANNOUNCE_BASE_URL:-}" \
 	/usr/local/bin/airsane-supervisor.sh "$airsane_ready_file" &
 airsane_supervisor_pid=$!
 attempt=0

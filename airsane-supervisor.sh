@@ -11,12 +11,21 @@ usb_bus=/dev/bus/usb
 mdns_announce="${MDNS_ANNOUNCE:-true}"
 airsane_debug="${AIRSANE_DEBUG:-true}"
 airsane_listen_port="${AIRSANE_LISTEN_PORT:-8090}"
+announce_secure="${ANNOUNCE_SECURE:-false}"
+announce_base_url="${ANNOUNCE_BASE_URL:-}"
 airsane_pid=
 watcher_pid=
 runtime_dir=
 
 start_airsane() {
-	su -s /bin/sh -c "exec /usr/local/bin/airsaned --listen-port=$airsane_listen_port --mdns-announce=$mdns_announce --access-log=- --debug=$airsane_debug" saned &
+	su -s /bin/sh -c 'exec /usr/local/bin/airsaned "$@"' saned \
+		airsaned \
+		"--listen-port=$airsane_listen_port" \
+		"--mdns-announce=$mdns_announce" \
+		"--announce-secure=$announce_secure" \
+		"--announce-base-url=$announce_base_url" \
+		--access-log=- \
+		"--debug=$airsane_debug" &
 	airsane_pid=$!
 	sleep 1
 	if ! kill -0 "$airsane_pid" 2>/dev/null; then

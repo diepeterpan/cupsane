@@ -25,6 +25,10 @@ spec:
           env:
             - name: MDNS_ANNOUNCE
               value: "false"
+            - name: ANNOUNCE_SECURE
+              value: "false"
+            - name: ANNOUNCE_BASE_URL
+              value: ""
           ports:
             - containerPort: 631
               hostPort: 8631
