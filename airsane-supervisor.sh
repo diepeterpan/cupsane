@@ -18,8 +18,7 @@ watcher_pid=
 runtime_dir=
 
 start_airsane() {
-	su -s /bin/sh -c 'exec /usr/local/bin/airsaned "$@"' saned \
-		airsaned \
+	runuser -u saned -- /usr/local/bin/airsaned \
 		"--listen-port=$airsane_listen_port" \
 		"--mdns-announce=$mdns_announce" \
 		"--announce-secure=$announce_secure" \
