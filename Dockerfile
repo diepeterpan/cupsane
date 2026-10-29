@@ -17,7 +17,7 @@ RUN git clone --depth 1 https://github.com/SimulPiscator/AirSane.git /tmp/AirSan
     rm -f /lib/systemd/system/airsaned.service && \
     rm -rf /tmp/AirSane /tmp/AirSane-build
 
-RUN sed -i '/^\[server\]/a enable-dbus=no' /etc/avahi/avahi-daemon.conf && \
+RUN sed -i '/^\[server\]/a enable-dbus=no\nuse-ipv6=no' /etc/avahi/avahi-daemon.conf && \
     usermod -aG scanner,lp,avahi saned && \
     sed -i '/^[[:space:]]*hpaio[[:space:]]*$/d; /^[[:space:]]*airscan[[:space:]]*$/d' /etc/sane.d/dll.conf && \
     printf '\nhpaio\nairscan\n' >> /etc/sane.d/dll.conf && \
