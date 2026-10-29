@@ -31,6 +31,8 @@ spec:
               value: ""
             - name: AVAHI_HOST_NAME
               value: ""
+            - name: AVAHI_DOMAIN
+              value: "local"
           ports:
             - containerPort: 631
               hostPort: 8631

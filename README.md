@@ -35,10 +35,11 @@ AirSane publishes scanners with mDNS. The Docker Compose configuration uses host
 | `ANNOUNCE_SECURE` | `false` | Set to `true` to mark AirSane's announced service as secure. |
 | `ANNOUNCE_BASE_URL` | empty | Optional base URL included in AirSane's service announcement. |
 | `AVAHI_HOST_NAME` | container `HOSTNAME` | Hostname written to the `[server]` section of `/etc/avahi/avahi-daemon.conf` when mDNS announcements are enabled. |
+| `AVAHI_DOMAIN` | `local` | Domain written as `domain-name` in the Avahi `[server]` section when mDNS announcements are enabled. |
 
 The supplied Docker Compose and Kubernetes configurations set `MDNS_ANNOUNCE=false`. To enable mDNS announcements for AirScan discovery, change the value to `true` or remove the variable.
-For Docker Compose, set `AIRSANE_DEBUG`, `AIRSANE_LISTEN_PORT`, `ANNOUNCE_SECURE`, `ANNOUNCE_BASE_URL`, or `AVAHI_HOST_NAME` in the shell or a `.env` file. When changing the listen port in a deployment with explicit port mappings, update those mappings to match.
-When mDNS announcements are enabled, the entrypoint starts a container-local system D-Bus before Avahi, sets the Avahi `host-name` from `AVAHI_HOST_NAME` (or the container's `HOSTNAME` if unset), and checks that Avahi remains running after startup. Both daemons use the container's `/run`; do not bind-mount the host's `/var/run/dbus` over the container's system-bus socket.
+For Docker Compose, set `AIRSANE_DEBUG`, `AIRSANE_LISTEN_PORT`, `ANNOUNCE_SECURE`, `ANNOUNCE_BASE_URL`, `AVAHI_HOST_NAME`, or `AVAHI_DOMAIN` in the shell or a `.env` file. When changing the listen port in a deployment with explicit port mappings, update those mappings to match.
+When mDNS announcements are enabled, the entrypoint starts a container-local system D-Bus before Avahi, sets the Avahi `host-name` from `AVAHI_HOST_NAME` (or the container's `HOSTNAME` if unset) and `domain-name` from `AVAHI_DOMAIN`, and checks that Avahi remains running after startup. Both daemons use the container's `/run`; do not bind-mount the host's `/var/run/dbus` over the container's system-bus socket.
 Avahi may log that it is removing a PID file for a process that no longer exists after an unclean shutdown. That message alone does not mean startup failed; the entrypoint now checks that Avahi remains alive.
 
 ## Deployment methods
