@@ -33,6 +33,8 @@ spec:
               value: ""
             - name: AVAHI_DOMAIN
               value: "local"
+            - name: AIRSANE_ACCESS_NETWORK
+              value: ""
           ports:
             - containerPort: 631
               hostPort: 8631

@@ -65,6 +65,23 @@ if [ "${#airsane_listen_port}" -gt 5 ] || [ "$airsane_listen_port" -lt 1 ] || [ 
 	exit 1
 fi
 
+airsane_access_network="${AIRSANE_ACCESS_NETWORK:-}"
+if [ -n "$airsane_access_network" ]; then
+	if ! python3 -c 'import ipaddress, sys; ipaddress.ip_network(sys.argv[1], strict=False)' "$airsane_access_network" >/dev/null 2>&1; then
+		echo "[entrypoint] AIRSANE_ACCESS_NETWORK must be a valid IP address or CIDR network" >&2
+		exit 1
+	fi
+
+	airsane_access_file=/etc/airsane/access.conf
+	airsane_access_rule="allow $airsane_access_network"
+	install -d -m 755 /etc/airsane
+	touch "$airsane_access_file"
+	if ! grep -Fqx "$airsane_access_rule" "$airsane_access_file"; then
+		printf '%s\n' "$airsane_access_rule" >> "$airsane_access_file"
+	fi
+	echo "[entrypoint] Added AirSane access rule: $airsane_access_rule" >&2
+fi
+
 mkdir -p /etc/default
 touch /etc/default/airsane
 if grep -q '^MDNS_ANNOUNCE=' /etc/default/airsane; then
