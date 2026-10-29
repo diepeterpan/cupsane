@@ -11,6 +11,56 @@ if [ -d /etc/cups ] && [ -z "$(ls -A /etc/cups 2>/dev/null)" ] && [ -f /opt/defa
 	cp /opt/defaults/cupsd.conf /etc/cups/cupsd.conf
 fi
 
+dnssd_host_name="${DNSSD_HOST_NAME:-}"
+if [ -n "$dnssd_host_name" ]; then
+	if ! printf '%s\n' "$dnssd_host_name" | awk '
+		{
+			if (length($0) > 253) {
+				exit 1
+			}
+			label_count = split($0, labels, ".")
+			if (label_count < 2) {
+				exit 1
+			}
+			for (i = 1; i <= label_count; i++) {
+				label = labels[i]
+				if (length(label) == 0 || length(label) > 63 ||
+					label ~ /^-/ || label ~ /-$/ ||
+					label ~ /[^A-Za-z0-9-]/) {
+					exit 1
+				}
+			}
+		}
+	'; then
+		echo "[entrypoint] DNSSD_HOST_NAME must be a fully qualified DNS hostname" >&2
+		exit 1
+	fi
+
+	cups_config=/etc/cups/cupsd.conf
+	if [ ! -f "$cups_config" ]; then
+		echo "[entrypoint] CUPS configuration not found: $cups_config" >&2
+		exit 1
+	fi
+
+	cups_config_tmp=$(mktemp "${cups_config}.XXXXXX")
+	if ! awk -v host_name="$dnssd_host_name" '
+		BEGIN {
+			print "DNSSDHostName " host_name
+		}
+		tolower($1) == "dnssdhostname" {
+			next
+		}
+		{ print }
+	' "$cups_config" > "$cups_config_tmp"; then
+		rm -f "$cups_config_tmp"
+		echo "[entrypoint] Failed to update CUPS DNS-SD hostname" >&2
+		exit 1
+	fi
+	chmod --reference="$cups_config" "$cups_config_tmp"
+	mv "$cups_config_tmp" "$cups_config"
+	echo "[entrypoint] Set CUPS DNS-SD hostname to $dnssd_host_name" >&2
+fi
+
 if ! command -v /usr/sbin/avahi-daemon >/dev/null 2>&1; then
 	echo "[entrypoint] avahi-daemon not found" >&2
 	exit 1

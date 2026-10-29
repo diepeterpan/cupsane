@@ -35,6 +35,8 @@ spec:
               value: "local"
             - name: AIRSANE_ACCESS_NETWORK
               value: ""
+            - name: DNSSD_HOST_NAME
+              value: ""
           ports:
             - containerPort: 631
               hostPort: 8631
