@@ -29,6 +29,8 @@ spec:
               value: "false"
             - name: ANNOUNCE_BASE_URL
               value: ""
+            - name: AVAHI_HOST_NAME
+              value: ""
           ports:
             - containerPort: 631
               hostPort: 8631

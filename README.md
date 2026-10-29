@@ -34,10 +34,11 @@ AirSane publishes scanners with mDNS. The Docker Compose configuration uses host
 | `AIRSANE_LISTEN_PORT` | `8090` | TCP port AirSane listens on (valid range: 1–65535). |
 | `ANNOUNCE_SECURE` | `false` | Set to `true` to mark AirSane's announced service as secure. |
 | `ANNOUNCE_BASE_URL` | empty | Optional base URL included in AirSane's service announcement. |
+| `AVAHI_HOST_NAME` | container `HOSTNAME` | Hostname written to the `[server]` section of `/etc/avahi/avahi-daemon.conf` when mDNS announcements are enabled. |
 
 The supplied Docker Compose and Kubernetes configurations set `MDNS_ANNOUNCE=false`. To enable mDNS announcements for AirScan discovery, change the value to `true` or remove the variable.
-For Docker Compose, set `AIRSANE_DEBUG`, `AIRSANE_LISTEN_PORT`, `ANNOUNCE_SECURE`, or `ANNOUNCE_BASE_URL` in the shell or a `.env` file. When changing the listen port in a deployment with explicit port mappings, update those mappings to match.
-When mDNS announcements are enabled, the entrypoint starts Avahi using `/etc/avahi/avahi-daemon.conf` and keeps it running as root inside the container.
+For Docker Compose, set `AIRSANE_DEBUG`, `AIRSANE_LISTEN_PORT`, `ANNOUNCE_SECURE`, `ANNOUNCE_BASE_URL`, or `AVAHI_HOST_NAME` in the shell or a `.env` file. When changing the listen port in a deployment with explicit port mappings, update those mappings to match.
+When mDNS announcements are enabled, the entrypoint sets the Avahi `host-name` from `AVAHI_HOST_NAME` (or the container's `HOSTNAME` if unset), then starts Avahi using `/etc/avahi/avahi-daemon.conf` and keeps it running as root inside the container.
 
 ## Deployment methods
 
