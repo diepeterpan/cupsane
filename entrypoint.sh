@@ -74,6 +74,37 @@ else
 fi
 
 if [ "$mdns_announce" = "true" ]; then
+	if ! command -v /usr/bin/dbus-daemon >/dev/null 2>&1; then
+		echo "[entrypoint] dbus-daemon not found" >&2
+		exit 1
+	fi
+
+	install -d -m 755 /run/dbus
+	echo "[entrypoint] Starting the system D-Bus daemon" >&2
+	if ! /usr/bin/dbus-daemon --system --fork; then
+		echo "[entrypoint] Failed to start the system D-Bus daemon" >&2
+		exit 1
+	fi
+	if [ ! -s /run/dbus/pid ]; then
+		echo "[entrypoint] System D-Bus did not create its PID file" >&2
+		exit 1
+	fi
+	dbus_pid=$(cat /run/dbus/pid)
+	case "$dbus_pid" in
+		''|*[!0-9]*)
+			echo "[entrypoint] System D-Bus created an invalid PID file" >&2
+			exit 1
+			;;
+	esac
+	if ! kill -0 "$dbus_pid" 2>/dev/null; then
+		echo "[entrypoint] System D-Bus exited after startup" >&2
+		exit 1
+	fi
+	if [ ! -S /run/dbus/system_bus_socket ]; then
+		echo "[entrypoint] System D-Bus socket was not created" >&2
+		exit 1
+	fi
+
 	avahi_config=/etc/avahi/avahi-daemon.conf
 	avahi_host_name="${AVAHI_HOST_NAME:-${HOSTNAME:-}}"
 	case "$avahi_host_name" in
@@ -142,11 +173,30 @@ if [ "$mdns_announce" = "true" ]; then
 
 	install -d -o avahi -g avahi /run/avahi-daemon
 	echo "[entrypoint] Starting Avahi for AirScan discovery (host-name=$avahi_host_name)" >&2
-	/usr/sbin/avahi-daemon \
+	if ! /usr/sbin/avahi-daemon \
 		--no-drop-root \
 		--file=/etc/avahi/avahi-daemon.conf \
 		--daemonize \
-		--debug 
+		--debug; then
+		echo "[entrypoint] Failed to start Avahi daemon" >&2
+		exit 1
+	fi
+	sleep 1
+	if [ ! -s /run/avahi-daemon/pid ]; then
+		echo "[entrypoint] Avahi did not create its PID file" >&2
+		exit 1
+	fi
+	avahi_pid=$(cat /run/avahi-daemon/pid)
+	case "$avahi_pid" in
+		''|*[!0-9]*)
+			echo "[entrypoint] Avahi created an invalid PID file" >&2
+			exit 1
+			;;
+	esac
+	if ! kill -0 "$avahi_pid" 2>/dev/null; then
+		echo "[entrypoint] Avahi exited after startup" >&2
+		exit 1
+	fi
 else
 	echo "[entrypoint] AirSane mDNS announcements disabled" >&2
 fi

@@ -38,7 +38,8 @@ AirSane publishes scanners with mDNS. The Docker Compose configuration uses host
 
 The supplied Docker Compose and Kubernetes configurations set `MDNS_ANNOUNCE=false`. To enable mDNS announcements for AirScan discovery, change the value to `true` or remove the variable.
 For Docker Compose, set `AIRSANE_DEBUG`, `AIRSANE_LISTEN_PORT`, `ANNOUNCE_SECURE`, `ANNOUNCE_BASE_URL`, or `AVAHI_HOST_NAME` in the shell or a `.env` file. When changing the listen port in a deployment with explicit port mappings, update those mappings to match.
-When mDNS announcements are enabled, the entrypoint sets the Avahi `host-name` from `AVAHI_HOST_NAME` (or the container's `HOSTNAME` if unset), then starts Avahi using `/etc/avahi/avahi-daemon.conf` and keeps it running as root inside the container.
+When mDNS announcements are enabled, the entrypoint starts a container-local system D-Bus before Avahi, sets the Avahi `host-name` from `AVAHI_HOST_NAME` (or the container's `HOSTNAME` if unset), and checks that Avahi remains running after startup. Both daemons use the container's `/run`; do not bind-mount the host's `/var/run/dbus` over the container's system-bus socket.
+Avahi may log that it is removing a PID file for a process that no longer exists after an unclean shutdown. That message alone does not mean startup failed; the entrypoint now checks that Avahi remains alive.
 
 ## Deployment methods
 
@@ -52,7 +53,6 @@ docker run --rm -d \
   --network host \
   --privileged \
   -e MDNS_ANNOUNCE=false \
-  -v /var/run/dbus:/var/run/dbus \
   -v /dev/bus/usb:/dev/bus/usb \
   bartekmp/cupsane:latest
 ```
@@ -67,7 +67,6 @@ mkdir -p ./storage/cups-config ./storage/cups-cache ./storage/cups-spool
 docker run --rm -d \
   --name cupsane \
   --privileged \
-  -v /var/run/dbus:/var/run/dbus \
   -v /dev/bus/usb:/dev/bus/usb \
   -v ./storage/cups-config:/etc/cups \
   -v ./storage/cups-cache:/var/cache/cups \
@@ -185,7 +184,7 @@ docker push bartekmp/cupsane:latest
 
 - USB printer/scanner connected to the host
 - Privileged container access for USB device access
-- D-Bus support on the host for HPLIP devices
+- D-Bus support for HPLIP devices; the image starts its own system bus when mDNS announcements are enabled, so host D-Bus mounts are not used
 - Host networking or mDNS multicast support for AirScan scanner discovery
 
 ## Supported devices

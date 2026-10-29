@@ -4,7 +4,7 @@ FROM debian:bookworm-slim
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates curl cups cups-filters printer-driver-cups-pdf printer-driver-hpcups hplip ghostscript printer-driver-gutenprint \
     python3-reportlab libjpeg62-turbo snmp libusb-1.0-0 python3-dbus python3 \
-    sane-utils libsane1 libsane-common libsane-hpaio sane-airscan avahi-daemon \
+    sane-utils libsane1 libsane-common libsane-hpaio sane-airscan avahi-daemon dbus \
     bash inotify-tools wget unzip build-essential cmake git g++ \
     libjbig-dev libcups2-dev libusb-1.0-0-dev pkg-config xxd \
     libsane-dev libjpeg-dev libpng-dev libavahi-client-dev \
@@ -17,8 +17,8 @@ RUN git clone --depth 1 https://github.com/SimulPiscator/AirSane.git /tmp/AirSan
     rm -f /lib/systemd/system/airsaned.service && \
     rm -rf /tmp/AirSane /tmp/AirSane-build
 
-#RUN sed -i '/^[[:space:]]*enable-dbus[[:space:]]*=/d; /^\[server\]/a enable-dbus=no' /etc/avahi/avahi-daemon.conf && \
-RUN sed -i '/^[[:space:]]*use-ipv6[[:space:]]*=/d; /^\[server\]/a use-ipv6=no' /etc/avahi/avahi-daemon.conf && \
+RUN sed -i '/^[[:space:]]*enable-dbus[[:space:]]*=/d; /^\[server\]/a enable-dbus=yes' /etc/avahi/avahi-daemon.conf && \
+    sed -i '/^[[:space:]]*use-ipv6[[:space:]]*=/d; /^\[server\]/a use-ipv6=no' /etc/avahi/avahi-daemon.conf && \
     usermod -aG scanner,lp,avahi saned && \
     sed -i '/^[[:space:]]*hpaio[[:space:]]*$/d; /^[[:space:]]*airscan[[:space:]]*$/d' /etc/sane.d/dll.conf && \
     printf '\nhpaio\nairscan\n' >> /etc/sane.d/dll.conf && \

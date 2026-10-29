@@ -39,8 +39,6 @@ spec:
               hostPort: 8090
               name: airsane
           volumeMounts:
-            - name: dbus-run
-              mountPath: /var/run/dbus
             - name: usb-bus
               mountPath: /dev/bus/usb
             - name: cups-config
@@ -73,9 +71,6 @@ spec:
               cpu: 500m
               memory: 512Mi
       volumes:
-        - name: dbus-run
-          hostPath:
-            path: /var/run/dbus
         - name: usb-bus
           hostPath:
             path: /dev/bus/usb
