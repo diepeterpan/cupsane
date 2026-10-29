@@ -145,7 +145,9 @@ if [ "$mdns_announce" = "true" ]; then
 	/usr/sbin/avahi-daemon \
 		--no-drop-root \
 		--file=/etc/avahi/avahi-daemon.conf \
-		--daemonize
+		--daemonize \
+		--debug \
+		--verbose
 else
 	echo "[entrypoint] AirSane mDNS announcements disabled" >&2
 fi
