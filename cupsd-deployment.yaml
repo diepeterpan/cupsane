@@ -18,7 +18,7 @@ spec:
         kubernetes.io/hostname: workstation
       containers:
         - name: cupsane
-          image: bartekmp/cupsane:latest
+          image: diepeterpan/cupsane:latest
           securityContext:
             privileged: true
             allowPrivilegeEscalation: true

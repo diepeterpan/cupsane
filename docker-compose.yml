@@ -1,6 +1,6 @@
 services:
   cupsd:
-    image: bartekmp/cupsane:latest
+    image: diepeterpan/cupsane:latest
     container_name: cupsane
     privileged: true
     network_mode: host

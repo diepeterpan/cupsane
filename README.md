@@ -1,16 +1,18 @@
 # cupsane
 
-[![Docker Hub](https://img.shields.io/docker/v/bartekmp/cupsane?label=Docker%20Hub&logo=docker)](https://hub.docker.com/r/bartekmp/cupsane)
-[![GitHub Container Registry](https://img.shields.io/badge/ghcr.io-bartekmp%2Fcupsane-blue?logo=github)](https://ghcr.io/bartekmp/cupsane)
-[![Build](https://github.com/bartekmp/cupsane/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/bartekmp/cupsane/actions/workflows/build-and-push.yml)
+[![Docker Hub](https://img.shields.io/docker/v/diepeterpan/cupsane?label=Docker%20Hub&logo=docker)](https://hub.docker.com/r/diepeterpan/cupsane)
+[![GitHub Container Registry](https://img.shields.io/badge/ghcr.io-diepeterpan%2Fcupsane-blue?logo=github)](https://ghcr.io/diepeterpan/cupsane)
+[![Build](https://github.com/diepeterpan/cupsane/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/diepeterpan/cupsane/actions/workflows/build-and-push.yml)
 
-A containerized CUPS print server with SANE scanner support and AirSane, an AirScan/eSCL scanner server with a simple web interface.
+A containerized CUPS print server with SANE scanner support and AirSane, an AirScan/eSCL scanner server with a simple web interface, pre-configured with Ricoh (`Gurich`) printer drivers, Gutenprint, and optional custom runtime driver installation.
 
 ## Features
 
 - **CUPS** - Network print server with web interface
-- **AirSane** - AirScan/eSCL scanner server, mDNS discovery, and a simple web interface
-- **SANE** - Scanner backends, including HP devices
+- **AirSane** - AirScan/eSCL scanner server, mDNS discovery, USB hotplug reload, and a simple web interface
+- **SANE** - Scanner backends, including AirScan (`sane-airscan`)
+- **Ricoh printer support** - Pre-compiled [`Gurich`](https://github.com/diepeterpan/Gurich) CUPS filter/backend and PPD files
+- **Custom runtime driver hook** - Automatically runs `/driver/install.sh` on startup if mounted
 - **Persistent configuration** - Printer settings survive container restarts
 - **Network accessible** - Printing and scanning are available on the LAN
 
@@ -58,7 +60,7 @@ docker run --rm -d \
   --privileged \
   -e MDNS_ANNOUNCE=false \
   -v /dev/bus/usb:/dev/bus/usb \
-  bartekmp/cupsane:latest
+  diepeterpan/cupsane:latest
 ```
 
 With host networking, CUPS is available on port 631 and AirSane on port 8090.
@@ -78,7 +80,7 @@ docker run --rm -d \
   -e TZ=Europe/Warsaw \
   -p 8631:631 \
   -p 8090:8090 \
-  bartekmp/cupsane:latest
+  diepeterpan/cupsane:latest
 ```
 
 Port mapping makes the web interface reachable, but Docker bridge networking does not generally forward AirSane's mDNS announcements. Use host networking or configure an mDNS relay if LAN scanner discovery is required.
@@ -130,9 +132,9 @@ Access CUPS at `http://<your-ip>:631` when using host networking, or at the mapp
 
 The default server configuration allows access from the LAN. To modify network access, edit `config/cupsd.conf` and rebuild the image.
 
-### Custom CUPS drivers
+### Custom scanner drivers
 
-To install a custom driver when the container starts, put an `install.sh` script and any required driver files in a host directory, then mount that directory at `/driver`. The script must be at `/driver/install.sh`; the entrypoint runs it with `sh` from `/driver/` before starting CUPS. It runs as root, so it can copy driver files into system directories. Keep the mounted directory read-only unless the script needs to modify its own files.
+To install a custom scanner (or printer) driver when the container starts, put an `install.sh` script and any required driver files in a host directory, then mount that directory at `/driver`. The script must be at `/driver/install.sh`; the entrypoint runs it with `sh` from `/driver/` before starting AirSane and CUPS. It runs as root, so it can install packages or copy SANE backend/driver files into system directories. Keep the mounted directory read-only unless the script needs to modify its own files.
 
 For Docker:
 
@@ -143,7 +145,7 @@ docker run --rm -d \
   -v /path/to/custom-driver:/driver:ro \
   -p 8631:631 \
   -p 8090:8090 \
-  bartekmp/cupsane:latest
+  diepeterpan/cupsane:latest
 ```
 
 For Docker Compose, add the driver directory to the service's `volumes`:
@@ -205,24 +207,26 @@ docker run --rm --privileged -p 8631:631 -p 8090:8090 cupsane
 For AirScan discovery on a Linux host, run the image with `--network host` instead of port mappings. To publish an updated image:
 
 ```bash
-docker tag cupsane bartekmp/cupsane:latest
-docker push bartekmp/cupsane:latest
+docker tag cupsane diepeterpan/cupsane:latest
+docker push diepeterpan/cupsane:latest
 ```
 
 ## Requirements
 
 - USB printer/scanner connected to the host
 - Privileged container access for USB device access
-- D-Bus support for HPLIP devices; the image starts its own system bus when mDNS announcements are enabled, so host D-Bus mounts are not used
+- Container-local system D-Bus is started automatically when mDNS announcements (`MDNS_ANNOUNCE=true`) are enabled; do not bind-mount host `/var/run/dbus`
 - Host networking or mDNS multicast support for AirScan scanner discovery
 
 ## Supported devices
 
-Primarily designed for HP printers/scanners via HPLIP, but also supports:
-
-- Generic PostScript printers
-- PDF printing (cups-pdf)
-- Network printers via IPP
+- **Ricoh printers** via [`Gurich`](https://github.com/diepeterpan/Gurich) CUPS filter/backend and PPD files
+- **Gutenprint-supported printers** (`printer-driver-gutenprint`)
+- **Generic PostScript printers**
+- **PDF printing** (`printer-driver-cups-pdf`)
+- **Network printers via IPP**
+- **SANE-compatible scanners** and **AirScan (`sane-airscan`)** exposed via AirSane (AirScan/eSCL)
+- **Custom printers/scanners** via `/driver/install.sh`
 
 Scanner availability depends on the SANE backends enabled in the image.
 
