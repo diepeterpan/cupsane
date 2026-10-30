@@ -24,15 +24,6 @@ RUN sed -i '/^[[:space:]]*enable-dbus[[:space:]]*=/d; /^\[server\]/a enable-dbus
     sed -i '/^[[:space:]]*airscan[[:space:]]*$/d' /etc/sane.d/dll.conf && \
     printf '\nairscan\n' >> /etc/sane.d/dll.conf
 
-WORKDIR /app
-RUN wget --no-cache https://github.com/diepeterpan/Gurich/archive/refs/heads/master.zip && \
-    unzip master.zip && \
-    cd /app/Gurich-master && make all && \
-    cp bin/gurich /usr/lib/cups/filter/ && \
-    cp bin/gurich_cbackend /usr/lib/cups/backend/gurich && \
-    cp ppd/* /usr/share/ppd/ && \
-    rm -rf /app/Gurich-master /app/master.zip
-
 EXPOSE 631 8090
 
 COPY --chown=root:lp config/cupsd.conf /etc/cups/cupsd.conf

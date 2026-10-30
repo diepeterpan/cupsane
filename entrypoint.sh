@@ -13,10 +13,15 @@ if [ -n "$admin_password" ]; then
 	printf 'lpadmin:%s\n' "$admin_password" | chpasswd
 fi
 
-if [ -f /driver/install.sh ]; then
-	printf '%s\n' "[entrypoint] Running /driver/install.sh" >&2
-	cd /driver/
-	sh install.sh
+if [ -d /driver ]; then
+	find /driver -type f -name 'install.sh' | sort | while IFS= read -r install_script; do
+		install_dir=$(dirname "$install_script")
+		printf '%s\n' "[entrypoint] Running $install_script" >&2
+		(
+			cd "$install_dir"
+			sh ./install.sh
+		)
+	done
 fi
 
 if [ -d /etc/cups ] && [ -z "$(ls -A /etc/cups 2>/dev/null)" ] && [ -f /opt/defaults/cupsd.conf ]; then

@@ -4,15 +4,14 @@
 [![GitHub Container Registry](https://img.shields.io/badge/ghcr.io-diepeterpan%2Fcupsane-blue?logo=github)](https://ghcr.io/diepeterpan/cupsane)
 [![Build](https://github.com/diepeterpan/cupsane/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/diepeterpan/cupsane/actions/workflows/build-and-push.yml)
 
-A containerized CUPS print server with SANE scanner support and AirSane, an AirScan/eSCL scanner server with a simple web interface, pre-configured with Ricoh (`Gurich`) printer drivers, Gutenprint, and optional custom runtime driver installation.
+A containerized CUPS print server with SANE scanner support and AirSane, an AirScan/eSCL scanner server with a simple web interface, Gutenprint printer drivers, and optional custom runtime driver installation.
 
 ## Features
 
 - **CUPS** - Network print server with web interface
 - **AirSane** - AirScan/eSCL scanner server, mDNS discovery, USB hotplug reload, and a simple web interface
 - **SANE** - Scanner backends, including AirScan (`sane-airscan`)
-- **Ricoh printer support** - Pre-compiled [`Gurich`](https://github.com/diepeterpan/Gurich) CUPS filter/backend and PPD files
-- **Custom runtime driver hook** - Automatically runs `/driver/install.sh` on startup if mounted
+- **Custom runtime driver hook** - Automatically runs `install.sh` scripts in `/driver` (and its subdirectories) on startup if mounted
 - **Persistent configuration** - Printer settings survive container restarts
 - **Network accessible** - Printing and scanning are available on the LAN
 
@@ -134,7 +133,7 @@ The default server configuration allows access from the LAN. To modify network a
 
 ### Custom scanner drivers
 
-To install a custom scanner (or printer) driver when the container starts, put an `install.sh` script and any required driver files in a host directory, then mount that directory at `/driver`. The script must be at `/driver/install.sh`; the entrypoint runs it with `sh` from `/driver/` before starting AirSane and CUPS. It runs as root, so it can install packages or copy SANE backend/driver files into system directories. Keep the mounted directory read-only unless the script needs to modify its own files.
+To install one or more custom scanner (or printer) drivers when the container starts, place each driver's `install.sh` script and required files in `/driver` or in subdirectories under `/driver` (for example, `/driver/scanner-a/install.sh` and `/driver/printer-b/install.sh`), then mount that directory at `/driver`. The entrypoint searches `/driver` for all `install.sh` files, `cd`s into each script's directory, and runs `sh ./install.sh` before starting AirSane and CUPS. It runs as root, so it can install packages or copy SANE backend/driver files into system directories. Keep the mounted directory read-only unless the scripts need to modify their own files.
 
 For Docker:
 
@@ -142,7 +141,7 @@ For Docker:
 docker run --rm -d \
   --name cupsane \
   --privileged \
-  -v /path/to/custom-driver:/driver:ro \
+  -v /path/to/custom-drivers:/driver:ro \
   -p 8631:631 \
   -p 8090:8090 \
   diepeterpan/cupsane:latest
@@ -152,10 +151,10 @@ For Docker Compose, add the driver directory to the service's `volumes`:
 
 ```yaml
 volumes:
-  - ./custom-driver:/driver:ro
+  - ./custom-drivers:/driver:ro
 ```
 
-For example, `./custom-driver/install.sh` on the host will be available as `/driver/install.sh` in the container. Include any files that script needs in the same directory and refer to them by their path under `/driver`.
+For example, `./custom-drivers/ricoh-scanner/install.sh` on the host will be executed from `/driver/ricoh-scanner` inside the container. Include any files a script needs in its own directory so it can reference them with relative paths.
 
 ### AirSane
 
@@ -220,13 +219,12 @@ docker push diepeterpan/cupsane:latest
 
 ## Supported devices
 
-- **Ricoh printers** via [`Gurich`](https://github.com/diepeterpan/Gurich) CUPS filter/backend and PPD files
 - **Gutenprint-supported printers** (`printer-driver-gutenprint`)
 - **Generic PostScript printers**
 - **PDF printing** (`printer-driver-cups-pdf`)
 - **Network printers via IPP**
 - **SANE-compatible scanners** and **AirScan (`sane-airscan`)** exposed via AirSane (AirScan/eSCL)
-- **Custom printers/scanners** via `/driver/install.sh`
+- **Custom scanners/printers** via `install.sh` scripts in `/driver` (and its subdirectories)
 
 Scanner availability depends on the SANE backends enabled in the image.
 
