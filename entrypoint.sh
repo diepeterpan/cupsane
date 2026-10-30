@@ -1,6 +1,18 @@
 #!/bin/sh
 set -eu
 
+admin_password="${ADMIN_PASSWORD:-}"
+if [ -n "$admin_password" ]; then
+	case "$admin_password" in
+		*'
+'*)
+			echo "[entrypoint] ADMIN_PASSWORD must not contain newline characters" >&2
+			exit 1
+			;;
+	esac
+	printf 'lpadmin:%s\n' "$admin_password" | chpasswd
+fi
+
 if [ -f /driver/install.sh ]; then
 	printf '%s\n' "[entrypoint] Running /driver/install.sh" >&2
 	cd /driver/

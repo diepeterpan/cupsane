@@ -38,9 +38,10 @@ AirSane publishes scanners with mDNS. The Docker Compose configuration uses host
 | `AVAHI_DOMAIN` | `local` | Domain written as `domain-name` in the Avahi `[server]` section when mDNS announcements are enabled. |
 | `AIRSANE_ACCESS_NETWORK` | empty | Optional IP address or CIDR network added as an `allow` rule in `/etc/airsane/access.conf` before AirSane starts (e.g. `10.0.0.0/24`). |
 | `DNSSD_HOST_NAME` | CUPS default | Optional fully qualified DNS hostname written as the `DNSSDHostName` directive in `/etc/cups/cupsd.conf` before CUPS starts (e.g. `cupsane.example.com`). |
+| `ADMIN_PASSWORD` | unset | Optional password for the CUPS admin account `lpadmin`, applied when the container starts. Leave unset to avoid changing the password. |
 
 The supplied Docker Compose and Kubernetes configurations set `MDNS_ANNOUNCE=false`. To enable mDNS announcements for AirScan discovery, change the value to `true` or remove the variable.
-For Docker Compose, set `AIRSANE_DEBUG`, `AIRSANE_LISTEN_PORT`, `ANNOUNCE_SECURE`, `ANNOUNCE_BASE_URL`, `AVAHI_HOST_NAME`, `AVAHI_DOMAIN`, `AIRSANE_ACCESS_NETWORK`, or `DNSSD_HOST_NAME` in the shell or a `.env` file. When changing the listen port in a deployment with explicit port mappings, update those mappings to match.
+For Docker Compose, set `ADMIN_PASSWORD`, `AIRSANE_DEBUG`, `AIRSANE_LISTEN_PORT`, `ANNOUNCE_SECURE`, `ANNOUNCE_BASE_URL`, `AVAHI_HOST_NAME`, `AVAHI_DOMAIN`, `AIRSANE_ACCESS_NETWORK`, or `DNSSD_HOST_NAME` in the shell or a `.env` file. Do not commit the password or a `.env` file containing it. In Kubernetes, create a Secret named `cupsane-admin` with a `password` key; the deployment reads that key when the Secret exists. When changing the listen port in a deployment with explicit port mappings, update those mappings to match.
 When mDNS announcements are enabled, the entrypoint starts a container-local system D-Bus before Avahi, sets the Avahi `host-name` from `AVAHI_HOST_NAME` (or the container's `HOSTNAME` if unset) and `domain-name` from `AVAHI_DOMAIN`, and checks that Avahi remains running after startup. Both daemons use the container's `/run`; do not bind-mount the host's `/var/run/dbus` over the container's system-bus socket.
 Avahi may log that it is removing a PID file for a process that no longer exists after an unclean shutdown. That message alone does not mean startup failed; the entrypoint now checks that Avahi remains alive.
 
@@ -128,6 +129,31 @@ Access CUPS at `http://<your-ip>:631` when using host networking, or at the mapp
 - Monitor print jobs
 
 The default server configuration allows access from the LAN. To modify network access, edit `config/cupsd.conf` and rebuild the image.
+
+### Custom CUPS drivers
+
+To install a custom driver when the container starts, put an `install.sh` script and any required driver files in a host directory, then mount that directory at `/driver`. The script must be at `/driver/install.sh`; the entrypoint runs it with `sh` from `/driver/` before starting CUPS. It runs as root, so it can copy driver files into system directories. Keep the mounted directory read-only unless the script needs to modify its own files.
+
+For Docker:
+
+```bash
+docker run --rm -d \
+  --name cupsane \
+  --privileged \
+  -v /path/to/custom-driver:/driver:ro \
+  -p 8631:631 \
+  -p 8090:8090 \
+  bartekmp/cupsane:latest
+```
+
+For Docker Compose, add the driver directory to the service's `volumes`:
+
+```yaml
+volumes:
+  - ./custom-driver:/driver:ro
+```
+
+For example, `./custom-driver/install.sh` on the host will be available as `/driver/install.sh` in the container. Include any files that script needs in the same directory and refer to them by their path under `/driver`.
 
 ### AirSane
 

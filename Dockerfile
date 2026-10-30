@@ -10,6 +10,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     libsane-dev libjpeg-dev libpng-dev libavahi-client-dev \
     && rm -rf /var/lib/apt/lists/*
 
+RUN useradd -m -g lpadmin lpadmin
+
 RUN git clone --depth 1 https://github.com/SimulPiscator/AirSane.git /tmp/AirSane && \
     cmake -S /tmp/AirSane -B /tmp/AirSane-build -DCMAKE_BUILD_TYPE=Release && \
     cmake --build /tmp/AirSane-build --parallel && \

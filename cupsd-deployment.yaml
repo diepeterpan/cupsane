@@ -37,6 +37,12 @@ spec:
               value: ""
             - name: DNSSD_HOST_NAME
               value: ""
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cupsane-admin
+                  key: password
+                  optional: true
           ports:
             - containerPort: 631
               hostPort: 8631
